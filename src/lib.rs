@@ -2,9 +2,63 @@ use core::f64;
 use std::iter;
 
 use numeric_equivalent::NumericEquivalent;
+use rand::{thread_rng, Rng, RngCore};
 
 mod numeric_equivalent;
 
+
+
+
+// this kind of sorts a little for each pass. each pass is essentially a shittier version of one pass bubble sort.
+pub fn trampoline_sort<T: NumericEquivalent>(mut to_sort: Vec<T>) -> Vec<T> {
+    let mut min = f64::MAX;
+    let mut max: f64 = f64::MIN;
+
+    for x in &to_sort {
+        let val = x.get_numeric();
+        if val < min {
+            min = val;
+        }
+        if val > max {
+            max = val;
+        }
+    }
+
+    let sort_length = to_sort.len();
+    let mut rng = thread_rng();
+
+    let mut i0 = 0;
+    while i0 < sort_length - 1 {
+        if i0 > 1 && to_sort.get(i0).expect("").get_numeric() < to_sort.get(i0-1).expect("").get_numeric() {
+            to_sort.swap(i0, i0-1);
+
+            if i0 == 1 {
+                break;
+            }
+         
+            // boing
+            let randswap = rng.gen_range(0..(i0-1));
+            to_sort.swap(i0-1, randswap)
+
+        } 
+        else if to_sort.get(i0).expect("").get_numeric() > to_sort.get(i0+1).expect("").get_numeric() {
+            to_sort.swap(i0, i0+1);
+
+            if i0 == sort_length-1 {
+                break;
+            }
+         
+            // boing
+            let randswap = rng.gen_range(i0+1..sort_length);
+            to_sort.swap(i0+1, randswap)
+        }
+        else {
+            i0 += 1;
+        }
+    }
+
+    to_sort
+}
 
 pub fn approximate_box_sort<T: NumericEquivalent>(to_sort: Vec<T>, bins: i64)  -> Vec<T> {
     let mut min = f64::MAX;
@@ -127,16 +181,31 @@ mod tests {
 
     #[test]
     fn test_box() {
+        //let mut rng = rand::thread_rng();
+        //let to_sort: Vec<TestFloat> = (0..10000).into_iter().map(|_| TestFloat {val: rng.gen_range(0..50000)}).collect();
+        //let mut to_sort_as_floats: Vec<i64> = to_sort.iter().map(|x| x.val).collect();
+        //let gaussian_sort_timer = Instant::now();
+        //let sorted = approximate_box_sort(to_sort, 100);
+        //let gaussian_sort_time = gaussian_sort_timer.elapsed();
+        //let standard_sort_timer = Instant::now();
+        //to_sort_as_floats.sort();
+        //let standard_sort_time = standard_sort_timer.elapsed();
+        //println!("{:?}", sorted.iter().map(|x| x.val).collect::<Vec<i64>>());
+        //println!("Standard sort time: {:?}, Box sort time: {:?}", standard_sort_time, gaussian_sort_time);
+    }
+
+    #[test]
+    fn test_trampoline() {
         let mut rng = rand::thread_rng();
         let to_sort: Vec<TestFloat> = (0..10000).into_iter().map(|_| TestFloat {val: rng.gen_range(0..50000)}).collect();
         let mut to_sort_as_floats: Vec<i64> = to_sort.iter().map(|x| x.val).collect();
         let gaussian_sort_timer = Instant::now();
-        let sorted = approximate_box_sort(to_sort, 100);
+        let sorted = trampoline_sort(to_sort);
         let gaussian_sort_time = gaussian_sort_timer.elapsed();
         let standard_sort_timer = Instant::now();
         to_sort_as_floats.sort();
         let standard_sort_time = standard_sort_timer.elapsed();
         println!("{:?}", sorted.iter().map(|x| x.val).collect::<Vec<i64>>());
-        println!("Standard sort time: {:?}, Box sort time: {:?}", standard_sort_time, gaussian_sort_time);
+        println!("Standard sort time: {:?}, Trampoline sort time: {:?}", standard_sort_time, gaussian_sort_time);
     }
 }
